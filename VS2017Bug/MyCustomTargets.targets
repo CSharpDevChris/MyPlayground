@@ -1,0 +1,57 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- Sample Build Task that generates a File in the obj Directory...
+  This File contains a Class with one Static Method that writes the Creation date...
+  -->
+  <UsingTask
+    TaskName="HelloWorld"
+    TaskFactory="CodeTaskFactory"
+    AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
+    <ParameterGroup>
+      <NameSpace ParameterType="System.String" Required="true" />
+      <OutFileName ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System"/>
+      <Using Namespace="System.IO"/>
+      <Using Namespace="System.Text"/>
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[  
+StringBuilder sb = new StringBuilder();
+sb.AppendLine("using System;");
+sb.AppendLine(string.Format("namespace {0}", NameSpace));
+sb.AppendLine("{");
+sb.AppendLine("internal class MyTest");
+sb.AppendLine("{");
+sb.AppendLine("public static void PrintCompileTime()");
+sb.AppendLine("{");
+sb.AppendLine(string.Format("//The File was created at {0}", DateTime.Now.ToString(new System.Globalization.CultureInfo("en-US"))));
+sb.AppendLine(string.Format("Console.WriteLine(\"MyTest Class created at: {0}\");", DateTime.Now.ToString(new System.Globalization.CultureInfo("en-US"))));
+sb.AppendLine("}");
+sb.AppendLine("}");
+sb.AppendLine("}");
+File.WriteAllText(OutFileName, sb.ToString());
+]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+  <ItemGroup>
+    <TestFile Include="$(IntermediateOutputPath)$(RootNamespace).MyTestFile.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--Include that file-->
+    <Compile Include="@(TestFile)" />
+  </ItemGroup>
+  
+  <PropertyGroup>
+    <!--Modify the Compile Workflow-> We will run the build task before the compile target-->
+    <CreateTestFileDependsOn>$(CoreCompileDependsOn)</CreateTestFileDependsOn>
+    <CoreCompileDependsOn>CreateTestFile;$(CoreCompileDependsOn)</CoreCompileDependsOn>
+  </PropertyGroup>
+  <Target Name="CreateTestFile" DependsOnTargets="$(CreateTestFileDependsOn)">
+    <!--Call the Build Task-->
+    <HelloWorld NameSpace="$(RootNamespace)" OutFileName="$(IntermediateOutputPath)$(RootNamespace).MyTestFile.cs"/>
+  </Target>  
+</Project>
